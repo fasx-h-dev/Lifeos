@@ -1,10 +1,17 @@
-# Supabase migrations and setup instructions
+## Supabase env variables
 
-This directory will contain SQL migration files for initializing the Supabase/Postgres schema and Row Level Security (RLS) policies.
+Set the following environment variables in a .env file or in your hosting environment (do not commit secrets):
 
-- To apply these migrations, run them using the Supabase SQL editor or the `supabase` CLI in your own project.
-- Do NOT commit any service_role keys or other secrets in this repository.
+- VITE_SUPABASE_URL="https://xyzcompany.supabase.co"
+- VITE_SUPABASE_ANON_KEY="public-anon-key"
 
-Migrations:
-- 001_create_tables.sql - creates users, dashboards, widgets, and audit_logs tables
-- 002_rls_policies.sql - enables RLS and creates per-user policies
+Applying migrations
+- Use the SQL files in supabase/migrations/ to create tables and RLS policies in your Supabase project.
+- You can run the SQL in the Supabase SQL editor or use the supabase CLI to run migrations.
+
+Running locally
+- npm install
+- npm run dev
+
+Notes
+- This app expects the Supabase migrations to be applied before dashboards are visible through the UI.
