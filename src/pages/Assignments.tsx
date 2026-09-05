@@ -111,7 +111,11 @@ export default function Assignments() {
           </div>
           <div>
             <h3 className="font-medium">Suggested next action</h3>
-            <p className="mt-2 text-sm">{suggested ? `${suggested.subject} — start with: ${suggested.instructions ? suggested.instructions.split('.').slice(0,1)[0] : 'Open the assignment'}` : 'No suggestion'}</p>
+            <p className="mt-2 text-sm">
+              {suggested
+                ? `${suggested.subject} — start with: ${suggested.instructions ? suggested.instructions.split('.').slice(0,1)[0] : 'Open the assignment'}`
+                : 'No suggestion'}
+            </p>
             <p className="mt-2 text-sm">Progress: {progress}%</p>
           </div>
         </div>
