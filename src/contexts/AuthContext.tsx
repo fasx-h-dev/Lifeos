@@ -25,6 +25,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     let isMounted = true
 
+    const ensureProfile = async (u: User | null) => {
+      if (!u) return
+      try {
+        await supabase.from('profiles').upsert({ id: u.id, full_name: (u.email ?? '').split('@')[0] }).select()
+      } catch (e) {
+        console.error('Error upserting profile', e)
+      }
+    }
+
     const getSession = async () => {
       try {
         const {
@@ -33,6 +42,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (!isMounted) return
         setSession(session)
         setUser(session?.user ?? null)
+        // ensure profile exists for the signed-in user
+        await ensureProfile(session?.user ?? null)
       } catch (err) {
         console.error('Error getting session', err)
       } finally {
@@ -46,6 +57,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(session)
       setUser(session?.user ?? null)
       setLoading(false)
+      // ensure profile exists when auth state changes
+      ensureProfile(session?.user ?? null)
     })
 
     return () => {
