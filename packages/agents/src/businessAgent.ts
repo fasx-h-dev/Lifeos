@@ -103,6 +103,14 @@ export async function decideOutreach(
 ): Promise<AgentOutcome<{ outreachId: string; status: 'APPROVED' | 'REJECTED' }>> {
   const audit = new AuditLogger(deps.auditSink)
 
+  // Confirm this approval is actually the one for this outreach draft before deciding it —
+  // otherwise a caller could pass a mismatched (but still their own) approvalId/outreachId
+  // pair and cross-link the decision to the wrong draft.
+  const approval = await approvalsRepo.get(deps.db, input.approvalId, deps.userId)
+  if (!approval || approval.taskRef !== input.outreachId) {
+    return { status: 'FAILED', error: 'That approval does not correspond to this outreach draft' }
+  }
+
   const decidedApproval = await approvalsRepo.decide(deps.db, input.approvalId, deps.userId, input.decision, input.decidedBy)
   if (!decidedApproval) {
     return { status: 'FAILED', error: 'Approval was already decided, or does not exist — decisions cannot be replayed' }

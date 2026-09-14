@@ -34,12 +34,18 @@ export const subjectsRepo = {
   list: (db: AnyDb, userId: string) =>
     db.select().from(schema.subjects).where(eq(schema.subjects.userId, userId)).orderBy(schema.subjects.name),
   create: async (db: AnyDb, userId: string, input: { name: string; color?: string }) =>
-    (await db.insert(schema.subjects).values({ userId, ...input }).returning())[0]
+    (await db.insert(schema.subjects).values({ userId, ...input }).returning())[0],
+  belongsToUser: async (db: AnyDb, id: string, userId: string) =>
+    (await db.select({ id: schema.subjects.id }).from(schema.subjects).where(and(eq(schema.subjects.id, id), eq(schema.subjects.userId, userId))).limit(1))
+      .length > 0
 }
 
 export const teachersRepo = {
   list: (db: AnyDb, userId: string) =>
     db.select().from(schema.teachers).where(eq(schema.teachers.userId, userId)).orderBy(schema.teachers.name),
+  belongsToUser: async (db: AnyDb, id: string, userId: string) =>
+    (await db.select({ id: schema.teachers.id }).from(schema.teachers).where(and(eq(schema.teachers.id, id), eq(schema.teachers.userId, userId))).limit(1))
+      .length > 0,
   create: async (
     db: AnyDb,
     userId: string,
@@ -190,6 +196,8 @@ export const calendarRepo = {
 // Governance: Approvals, Audit Log, AI Tasks, Notifications, Integrations
 // ---------------------------------------------------------------------------
 export const approvalsRepo = {
+  get: async (db: AnyDb, id: string, userId: string) =>
+    (await db.select().from(schema.approvals).where(and(eq(schema.approvals.id, id), eq(schema.approvals.userId, userId))).limit(1))[0],
   list: (db: AnyDb, userId: string, status?: 'AWAITING_REVIEW' | 'APPROVED' | 'REJECTED') =>
     db
       .select()

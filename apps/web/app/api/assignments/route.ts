@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { requireApiContext } from '@/lib/apiContext'
 import { assignmentsRepo } from '@lifeos/db'
 import { createAssignmentDirect } from '@lifeos/agents'
+import { verifyOptionalRefs } from '@/lib/ownership'
 
 export async function GET() {
   const ctx = await requireApiContext()
@@ -22,6 +23,10 @@ export async function POST(req: Request) {
     teacherId?: string
     priority?: number
   }
+
+  const refError = await verifyOptionalRefs(ctx.db, ctx.user.id, { subjectId: body.subjectId, teacherId: body.teacherId })
+  if (refError) return NextResponse.json({ error: refError }, { status: 400 })
+
   const outcome = await createAssignmentDirect(
     { db: ctx.db, userId: ctx.user.id, ai: ctx.ai, auditSink: ctx.auditSink },
     { title: body.title, instructions: body.instructions, dueDate: body.dueDate ? new Date(body.dueDate) : undefined, subjectId: body.subjectId, teacherId: body.teacherId, priority: body.priority }

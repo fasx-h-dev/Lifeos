@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
-import { createCipheriv, randomBytes, createHash } from 'node:crypto'
+import { createCipheriv, createHash, randomBytes, timingSafeEqual } from 'node:crypto'
+import { cookies } from 'next/headers'
+import { getAuthedUser } from '@/lib/auth'
 import { getServerDb } from '@/lib/serverDb'
 import { schema } from '@lifeos/db'
 import { eq, and } from 'drizzle-orm'
@@ -8,6 +10,15 @@ import { eq, and } from 'drizzle-orm'
  * Real /api/oauth/callback route: exchanges the authorization code for tokens and stores
  * them encrypted at rest. Requires GOOGLE_OAUTH_CLIENT_ID/SECRET, which aren't set in this
  * build — so this correctly 501s with setup instructions instead of pretending to connect.
+ *
+ * Two checks that are NOT optional here:
+ *  1. The caller must have a real, current session (getAuthedUser) — the user this token
+ *     gets attached to is read from THAT session, never from the redirect URL.
+ *  2. `state` must match the nonce this server issued in /oauth/google/start, read back
+ *     from its own httpOnly cookie — otherwise this is a classic OAuth CSRF: an attacker
+ *     completes their own Google consent and tricks a logged-in victim's browser into
+ *     hitting this callback, linking the attacker's Google account into the victim's
+ *     LifeOS integration.
  */
 export async function GET(req: Request) {
   const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID
@@ -23,10 +34,24 @@ export async function GET(req: Request) {
     )
   }
 
+  const authedUser = await getAuthedUser()
+  if (!authedUser) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+  const userId = authedUser.id
+
   const url = new URL(req.url)
   const code = url.searchParams.get('code')
-  const userId = url.searchParams.get('state')
-  if (!code || !userId) return NextResponse.json({ error: 'Missing code/state' }, { status: 400 })
+  const returnedState = url.searchParams.get('state')
+  const jar = await cookies()
+  const expectedState = jar.get('google_oauth_state')?.value
+
+  const stateValid =
+    !!returnedState &&
+    !!expectedState &&
+    returnedState.length === expectedState.length &&
+    timingSafeEqual(Buffer.from(returnedState), Buffer.from(expectedState))
+  if (!code || !stateValid) {
+    return NextResponse.json({ error: 'Invalid or expired OAuth state' }, { status: 400 })
+  }
 
   const redirectUri = new URL('/api/oauth/google/callback', req.url).toString()
   const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
@@ -65,5 +90,7 @@ export async function GET(req: Request) {
     await db.insert(schema.integrations).values({ userId, provider: 'google_calendar', ...values })
   }
 
-  return NextResponse.redirect(new URL('/dashboard', req.url))
+  const res = NextResponse.redirect(new URL('/dashboard', req.url))
+  res.cookies.delete('google_oauth_state')
+  return res
 }

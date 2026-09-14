@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireApiContext } from '@/lib/apiContext'
 import { assignmentsRepo } from '@lifeos/db'
+import { verifyOptionalRefs } from '@/lib/ownership'
 
 type AssignmentPatchBody = {
   title?: string
@@ -19,6 +20,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if ('error' in ctx) return ctx.error
   const { id } = await params
   const body = (await req.json()) as AssignmentPatchBody
+
+  const refError = await verifyOptionalRefs(ctx.db, ctx.user.id, { subjectId: body.subjectId, teacherId: body.teacherId })
+  if (refError) return NextResponse.json({ error: refError }, { status: 400 })
 
   const updates: Record<string, unknown> = {}
   if (body.title !== undefined) updates.title = body.title

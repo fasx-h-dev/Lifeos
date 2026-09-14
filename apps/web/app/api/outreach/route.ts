@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { requireApiContext } from '@/lib/apiContext'
 import { draftOutreach } from '@lifeos/agents'
 import { outreachRepo, leadsRepo } from '@lifeos/db'
+import { checkRateLimit } from '@/lib/rateLimit'
 
 export async function GET() {
   const ctx = await requireApiContext()
@@ -14,6 +15,13 @@ export async function GET() {
 export async function POST(req: Request) {
   const ctx = await requireApiContext()
   if ('error' in ctx) return ctx.error
+
+  // HIGH-risk action that also spends AI budget — throttle per user.
+  const limit = checkRateLimit(`draft-outreach:${ctx.user.id}`, { max: 10, windowMs: 60 * 60_000 })
+  if (!limit.allowed) {
+    return NextResponse.json({ error: 'Rate limit exceeded, try again later', retryAfterMs: limit.retryAfterMs }, { status: 429 })
+  }
+
   const body = (await req.json()) as { leadId?: string; goal?: string; businessContext?: string }
   if (!body.leadId || !body.goal) return NextResponse.json({ error: 'leadId and goal are required' }, { status: 400 })
 

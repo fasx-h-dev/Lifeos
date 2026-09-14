@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireApiContext } from '@/lib/apiContext'
 import { teachersRepo } from '@lifeos/db'
+import { verifyOptionalRefs } from '@/lib/ownership'
 
 export async function GET() {
   const ctx = await requireApiContext()
@@ -21,6 +22,10 @@ export async function POST(req: Request) {
     notes?: string
   }
   if (!body.name) return NextResponse.json({ error: 'name is required' }, { status: 400 })
+
+  const refError = await verifyOptionalRefs(ctx.db, ctx.user.id, { subjectId: body.subjectId })
+  if (refError) return NextResponse.json({ error: refError }, { status: 400 })
+
   const row = await teachersRepo.create(ctx.db, ctx.user.id, {
     name: body.name,
     subjectId: body.subjectId,

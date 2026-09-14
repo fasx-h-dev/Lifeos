@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireApiContext } from '@/lib/apiContext'
 import { extractAndCreateAssignment } from '@lifeos/agents'
+import { verifyOptionalRefs } from '@/lib/ownership'
 
 /** The School Agent pipeline: raw pasted text -> AI extract -> Context Gate -> store. */
 export async function POST(req: Request) {
@@ -8,6 +9,9 @@ export async function POST(req: Request) {
   if ('error' in ctx) return ctx.error
   const body = (await req.json()) as { rawText?: string; subjectId?: string; teacherId?: string }
   if (!body.rawText) return NextResponse.json({ error: 'rawText is required' }, { status: 400 })
+
+  const refError = await verifyOptionalRefs(ctx.db, ctx.user.id, { subjectId: body.subjectId, teacherId: body.teacherId })
+  if (refError) return NextResponse.json({ error: refError }, { status: 400 })
 
   const outcome = await extractAndCreateAssignment(
     { db: ctx.db, userId: ctx.user.id, ai: ctx.ai, auditSink: ctx.auditSink },
