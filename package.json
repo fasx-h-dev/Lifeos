@@ -1,27 +1,21 @@
 {
-  "name": "lifeos-web",
-  "version": "0.1.0",
+  "name": "lifeos",
   "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "typecheck": "tsc --noEmit",
-    "start": "vite"
-  },
-  "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "@supabase/supabase-js": "^2.28.0"
+    "dev": "npm run dev -w apps/web",
+    "build": "npm run build -w apps/web",
+    "test": "npm run test -w packages/core -w packages/agents -w packages/db",
+    "test:e2e": "npm run test:e2e -w apps/web",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "db:generate": "npm run db:generate -w packages/db",
+    "db:migrate": "npm run db:migrate -w packages/db"
   },
   "devDependencies": {
-    "typescript": "^5.2.2",
-    "vite": "^5.2.0",
-    "@vitejs/plugin-react": "^4.0.0",
-    "tailwindcss": "^3.4.0",
-    "postcss": "^8.4.0",
-    "autoprefixer": "^10.4.0",
-    "@types/react": "^18.2.21",
-    "@types/react-dom": "^18.2.7"
+    "typescript": "^5.5.4"
   }
 }

@@ -1,17 +1,19 @@
-## Supabase env variables
+## Supabase's role in this app
 
-Set the following environment variables in a .env file or in your hosting environment (do not commit secrets):
+Supabase now provides two things only:
 
-- VITE_SUPABASE_URL="https://xyzcompany.supabase.co"
-- VITE_SUPABASE_ANON_KEY="public-anon-key"
+1. **Auth** (magic-link sign-in) — see `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   in the root `.env.example`.
+2. **Postgres hosting** — the same project's Postgres connection string is used as
+   `DATABASE_URL`, accessed only from the server (`apps/web`) via Drizzle ORM.
 
-Applying migrations
-- Use the SQL files in supabase/migrations/ to create tables and RLS policies in your Supabase project.
-- You can run the SQL in the Supabase SQL editor or use the supabase CLI to run migrations.
+The database schema itself is no longer defined by hand-written SQL in this folder —
+it lives in `packages/db/src/schema.ts` (Drizzle) and is applied via
+`packages/db/migrations/`, generated with `npm run db:generate -w packages/db`.
 
-Running locally
-- npm install
-- npm run dev
+The original hand-written table/RLS SQL that used to live in `supabase/migrations/`
+has been superseded and moved to `legacy-vite-app/supabase-migrations/` for reference.
 
-Notes
-- This app expects the Supabase migrations to be applied before dashboards are visible through the UI.
+Row-level security is not used for the new schema: since all data access now goes
+through `apps/web`'s own server-side API routes (never directly from the browser to
+Supabase), authorization is enforced in that application code instead.

@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  height: 100%;
+}
+
+.status-pill {
+  @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium;
+}
+.status-READY,
+.status-COMPLETED,
+.status-APPROVED,
+.status-ACCEPTED {
+  @apply bg-green-100 text-green-800;
+}
+.status-NEEDS_INFO,
+.status-AWAITING_REVIEW {
+  @apply bg-amber-100 text-amber-800;
+}
+.status-UNCERTAIN {
+  @apply bg-orange-100 text-orange-800;
+}
+.status-BLOCKED,
+.status-FAILED,
+.status-REJECTED,
+.status-EXPIRED {
+  @apply bg-red-100 text-red-800;
+}

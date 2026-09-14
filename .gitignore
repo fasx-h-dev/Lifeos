@@ -1,9 +1,16 @@
 node_modules
 dist
 .env
+.env.local
+.env*.local
 .vscode
 .DS_Store
 npm-debug.log
 yarn-error.log
 .idea
 coverage
+.next
+test-results
+playwright-report
+apps/web/next-env.d.ts
+*.tsbuildinfo
