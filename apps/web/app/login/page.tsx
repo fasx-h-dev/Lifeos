@@ -1,36 +1,24 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { getSupabaseClient } from '@/lib/supabaseClient'
+import { getSupabaseBrowserClient } from '@/lib/supabase/browserClient'
 
 export default function LoginPage() {
   const router = useRouter()
-  const supabase = getSupabaseClient()
+  const supabase = getSupabaseBrowserClient()
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-
-  useEffect(() => {
-    if (!supabase) return
-    const syncAndGo = async (accessToken: string) => {
-      await fetch('/api/auth/sync', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accessToken }) })
-      router.replace('/dashboard')
-    }
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) syncAndGo(data.session.access_token)
-    })
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) syncAndGo(session.access_token)
-    })
-    return () => sub.subscription.unsubscribe()
-  }, [supabase, router])
 
   const sendMagicLink = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!supabase) return
     setLoading(true)
     setMessage(null)
-    const { error } = await supabase.auth.signInWithOtp({ email })
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback` }
+    })
     setMessage(error ? error.message : 'Magic link sent — check your email.')
     setLoading(false)
   }
